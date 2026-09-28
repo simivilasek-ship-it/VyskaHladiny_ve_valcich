@@ -1,107 +1,98 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-
 #define VSTUPNI_SOUBOR "cisla.txt"
 #define VYSTUPNI_SOUBOR "vystup.txt"
-#define PI 3.14159265358979323846
+#define PI 3.14
 
-// Kontrola otevření souboru
-void kontrolaOtevreni(FILE *soubor) {
+
+void Kontrola_otevreni(FILE *soubor, const char* SOUBOR) {
     if (soubor == NULL) {
-        printf("[CHYBA] - Soubor se nepodařilo otevřít.\n");
+        printf("Soubor %s se nepodarilo spravne otevrit.\n", SOUBOR);
+        exit(EXIT_FAILURE);
+    }
+
+}
+
+void Kontrola_uzavreni(FILE *soubor, const char* SOUBOR) {
+    if (fclose(soubor) == EOF) {
+        printf("Soubor %s se nepodarilo zavrit.\n", SOUBOR);
         exit(EXIT_FAILURE);
     }
 }
 
-// Kontrola uzavření souboru
-void kontrolaUzavreni(FILE *soubor) {
-    if (fclose(soubor) != 0) {
-        printf("[CHYBA] - Soubor se nepodařilo správně uzavřít.\n");
-        exit(EXIT_FAILURE);
-    }
+void Tisk_hlavicky_obrazovka(void) {
+    printf("=====================================================================\n");
+    printf("| Poradi | Polomer | Vyska |Objem valce | Mnozstvi vody | Vejde se? |\n");
+    printf("=====================================================================\n");
 }
 
-// Výpočet objemu válce v dm3
+void Tisk_hlavicky_soubor(FILE *f) {
+
+    fprintf(f, "VALCE S VYHOVUJICIM OBJEMEM\n");
+    fprintf(f, "=============================================================================\n");
+    fprintf(f, "| Poradi | Polomer | Vyska | Objem valce | Mnozstvi vody | Vyska hladiny |\n");
+    fprintf(f, "=============================================================================\n");
+}
+
 float objemValce(int polomer, int vyska) {
-    return (float)(PI * polomer * polomer * vyska / 1000.0);
+    return (PI * polomer * polomer * vyska) / 1000.0f;
 }
 
-// Výpočet hladiny vody v cm
-float hladinaVody(int polomer, int mnozstvi) {
-    if (polomer <= 0) return 0.0f;
-    return (mnozstvi * 1000.0) / (PI * polomer * polomer);
+
+float vyskaHladiny(int polomer, int vodaLitry) {
+    return (vodaLitry * 1000.0f) / (PI * polomer * polomer);
 }
 
-// Hlavička pro výpis na obrazovku
-void hlavickaObrazovka(FILE *f) {
-    fprintf(f, "=====================================================\n");
-    fprintf(f, "=================== Válce =========================\n");
-    fprintf(f, "=====================================================\n");
-    fprintf(f, "|-Pořadí-|-Poloměr-|-Výška-|--Objem----|-Voda---|\n");
-    fprintf(f, "=====================================================\n");
+void Tisk_paticky_obrazovka(void) {
+    printf("=======================================================================\n");
 }
 
-// Paticka pro obrazovku
-void patickaObrazovka(FILE *f) {
-    fprintf(f, "=====================================================\n\n\n");
+void Tisk_paticky_soubor(FILE *f) {
+    fprintf(f, "=============================================================================\n");
 }
 
-// Hlavička pro výstupní soubor
-void hlavickaSoubor(FILE *f) {
-    fprintf(f, "===============================================================\n");
-    fprintf(f, "======================== Válce ===============================\n");
-    fprintf(f, "===============================================================\n");
-    fprintf(f, "|-Pořadí-|-Poloměr-|-Výška-|---Objem---|-Voda---|-Hladina-|\n");
-    fprintf(f, "===============================================================\n");
-}
-
-// Paticka pro soubor
-void patickaSoubor(FILE *f) {
-    fprintf(f, "===============================================================\n\n\n");
-}
 
 int main(void) {
-    FILE *souborVstup = fopen(VSTUPNI_SOUBOR, "r");
-    FILE *souborVystup = fopen(VYSTUPNI_SOUBOR, "w");
+    FILE *souborvstup = fopen(VSTUPNI_SOUBOR, "r");
+    FILE *souborvystup = fopen(VYSTUPNI_SOUBOR, "w");
 
-    kontrolaOtevreni(souborVstup);
-    kontrolaOtevreni(souborVystup);
+    Kontrola_otevreni(souborvstup, VSTUPNI_SOUBOR);
+    Kontrola_otevreni(souborvystup, VYSTUPNI_SOUBOR);
 
-    int polomer, vyska, mnozstvi;
-    int poradoveCislo = 0;
-    int poradoveCisloPlatne = 0;
+    Tisk_hlavicky_obrazovka();
+    Tisk_hlavicky_soubor(souborvystup);
 
-    hlavickaSoubor(souborVystup);
-    hlavickaObrazovka(stdout);
+    int polomer,vyska, voda;
+    int poradoveCislo = 1;
+    int vyhovujiciCislo = 1;
 
-    while (fscanf(souborVstup, "%d %d %d", &polomer, &vyska, &mnozstvi) == 3) {
+    while (fscanf(souborvstup,"%d  %d %d",&polomer, & vyska, &voda) ==3) {
+        float objem=objemValce(polomer,vyska);
+        int vejdeSe = (voda<=objem);
+        fprintf(stdout, "|%7d | %7d | %5d | %7.2f dm3 | %8d l | %9s |\n",
+                   poradoveCislo, polomer, vyska, objem, voda, vejdeSe ? "ANO" : "NE");
+
+        // Do souboru zapisujeme pouze kompletní řádek, pokud se voda vejde
+        if (vejdeSe) {
+            float hladina = vyskaHladiny(polomer, voda);
+
+            // PERFEKTNÍ ZAROVNÁNÍ: Šířky polí přesně odpovídají nové hlavičce souboru
+            fprintf(souborvystup, "| %6d | %4d cm | %4d cm | %8.2f dm3 | %11d l | %11.2f cm |\n",
+                    vyhovujiciCislo, polomer, vyska, objem, voda, hladina);
+            vyhovujiciCislo++;
+        }
         poradoveCislo++;
-
-        if (polomer <= 0 || vyska <= 0 || mnozstvi < 0) {
-            printf("[VAROVÁNÍ] - Neplatný vstup u záznamu %d (r=%d, h=%d, voda=%d).\n", poradoveCislo, polomer, vyska, mnozstvi);
-            continue;
-        }
-
-        float objem = objemValce(polomer, vyska);
-
-        if (objem >= mnozstvi) {
-            poradoveCisloPlatne++;
-            float hladina = hladinaVody(polomer, mnozstvi);
-            fprintf(souborVystup, "| %3d. | %3d cm | %3d cm | %8.2f dm3 | %6d l | %7.2f cm |\n",
-                    poradoveCisloPlatne, polomer, vyska, objem, mnozstvi, hladina);
-        }
-
-        fprintf(stdout, "| %3d. | %3d cm | %3d cm | %8.2f dm3 | %6d l |\n", poradoveCislo, polomer, vyska, objem, mnozstvi);
     }
 
-    patickaSoubor(souborVystup);
-    patickaObrazovka(stdout);
 
-    printf("[INFO] - Soubor %s byl vytvořen.\n\n", VYSTUPNI_SOUBOR);
+    Tisk_paticky_obrazovka();
+    Tisk_paticky_soubor(souborvystup);
 
-    kontrolaUzavreni(souborVstup);
-    kontrolaUzavreni(souborVystup);
+
+    Kontrola_uzavreni(souborvstup, VSTUPNI_SOUBOR);
+    Kontrola_uzavreni(souborvystup, VYSTUPNI_SOUBOR);
+
+
 
     return 0;
 }
