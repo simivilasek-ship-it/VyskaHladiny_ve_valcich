@@ -64,24 +64,13 @@ int main(void) {
 
     int polomer,vyska, voda;
     int poradoveCislo = 1;
-    int vyhovujiciCislo = 1;
+
 
     while (fscanf(souborvstup,"%d  %d %d",&polomer, & vyska, &voda) ==3) {
         float objem=objemValce(polomer,vyska);
         int vejdeSe = (voda<=objem);
         fprintf(stdout, "|%7d | %7d | %5d | %7.2f dm3 | %8d l | %9s |\n",
                    poradoveCislo, polomer, vyska, objem, voda, vejdeSe ? "ANO" : "NE");
-
-        // Do souboru zapisujeme pouze kompletní řádek, pokud se voda vejde
-        if (vejdeSe) {
-            float hladina = vyskaHladiny(polomer, voda);
-
-            // PERFEKTNÍ ZAROVNÁNÍ: Šířky polí přesně odpovídají nové hlavičce souboru
-            fprintf(souborvystup, "| %6d | %4d cm | %4d cm | %8.2f dm3 | %11d l | %11.2f cm |\n",
-                    vyhovujiciCislo, polomer, vyska, objem, voda, hladina);
-            vyhovujiciCislo++;
-        }
-        poradoveCislo++;
     }
 
 
